@@ -4547,7 +4547,7 @@ function drawRemotes(n){
   const dx=r.x-r.vx,dy=r.y-r.vy;if(Math.abs(dx)>8||Math.abs(dy)>8){r.vx=r.x;r.vy=r.y}else{r.vx+=dx*.22;r.vy+=dy*.22;if(Math.abs(r.x-r.vx)<.02)r.vx=r.x;if(Math.abs(r.y-r.vy)<.02)r.vy=r.y}
   const X=Math.round((r.vx-CAM.ox)*T),Y=Math.round((r.vy-CAM.oy)*T);
   if(X<-40||Y<-50||X>cv.width+10||Y>cv.height+10)continue;
-  const sh=Object.assign(Object.create(real),{x:r.x,y:r.y,vx:r.vx,vy:r.vy,cls:r.cls,g:r.g,hc:r.hc,hs:r.hs,sk:r.sk,cc:r.cc,fs:r.fs,bs:r.bs,eq:r.eq||{},arm:r.arm,wpn:r.wpn,mag:r.mag,mel:r.mel,lv:r.lv,f:r.f||1,fd:r.fd,name:r.n}),hu=typeof hurt!='undefined'?hurt:0;
+  const sh=Object.assign(r._sh&&Object.getPrototypeOf(r._sh)===real?r._sh:(r._sh=Object.assign(Object.create(real),{_gn:-1,_gr:null,_gx:undefined,_gy:undefined,_gt:0,_tr:0,_dr:null,lx:0,ly:0,_ft:0})),{x:r.x,y:r.y,vx:r.vx,vy:r.vy,cls:r.cls,g:r.g,hc:r.hc,hs:r.hs,sk:r.sk,cc:r.cc,fs:r.fs,bs:r.bs,eq:r.eq||{},arm:r.arm,wpn:r.wpn,mag:r.mag,mel:r.mel,lv:r.lv,f:r.f||1,fd:r.fd,name:r.n}),hu=typeof hurt!='undefined'?hurt:0;
   p=sh;try{if(typeof hurt!='undefined')hurt=0;_ps(X,Y,n)}finally{p=real;if(typeof hurt!='undefined')hurt=hu}
   c.save();c.font='bold 11px monospace';c.lineWidth=4;c.lineJoin='round';c.strokeStyle='#000';c.fillStyle='#fff';
   const nm=r.n||'?',nx=X+12-c.measureText(nm).width/2;c.strokeText(nm,nx,Y-9);c.fillText(nm,nx,Y-9);c.restore();
