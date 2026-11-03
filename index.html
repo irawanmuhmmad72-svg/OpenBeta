@@ -3036,7 +3036,7 @@ const tx=(i,t)=>{const e=$(i);if(e&&e.textContent!==t)e.textContent=t};
 tx('thp','HP '+Math.ceil(p.hp)+'/'+p.mhp);tx('tmp','MP '+Math.floor(p.mp)+'/'+p.mmp);
 const tm=(typeof tgM!=='undefined'&&tgM&&tgM.hp>0&&tgT&&Date.now()<tgT)?tgM:null;
 set('bmo',tm?100*tm.hp/tm.mh:0);tx('tmo',tm?Math.ceil(tm.hp)+'/'+tm.mh:'MUSUH');{const e=$('tmo');if(e)e.style.opacity=tm?1:.45}
-const s=[p.name,p.cls,p.lv,p.gold,p.pot,p.pot2|0,p.mpt|0,p.st|0,atkPts(),defPts(),inv.length,inv.slice(0,MAXI).join(),E.w,E.s,E.a,ok,Math.ceil(p.hp),p.mhp,Math.floor(p.mp),p.mmp].join('|');
+const s=[p.name,p.cls,p.lv,p.exp,p.gold,p.pot,p.pot2|0,p.mpt|0,p.st|0,atkPts(),defPts(),inv.length,inv.slice(0,MAXI).join(),E.w,E.s,E.a,ok,Math.ceil(p.hp),p.mhp,Math.floor(p.mp),p.mmp].join('|');
 if(s==sig)return;sig=s;
 $('lh').textContent=`${p.name||''} Lv${p.lv} · Ransel ${Math.min(inv.length,MAXI)}/${MAXI}`;
 $('st').innerHTML=`<span>EXP ${p.exp}/${need()}</span><span>Gold ${p.gold}</span><span>Serang ${atkPts()}</span><span>Tahan ${defPts()}</span><span style="grid-column:1/3">Ramuan ${p.pot} · Besar ${p.pot2|0} · MP ${p.mpt|0}</span>`;
@@ -4527,31 +4527,95 @@ function onChatMsg(m){if(!CH_H)return;CH_H({data:m});if(m&&m.t=='w'){for(const i
 if(typeof chbc!=='undefined'&&chbc){CH_H=chbc.onmessage;chbc.onmessage=null;chbc.postMessage=m=>T_.sendChat(m)}
 /* ---------- pemain lain ---------- */
 const REM={};let curW=null,lastSent=0,lastSig='',CAM={};
-const onPos=m=>{if(!m||!m.i||m.i==NET.uid)return;const r=REM[m.i]||(REM[m.i]={vx:m.x,vy:m.y});Object.assign(r,m);r.seen=Date.now()};
+const onPos=m=>{if(!m||!m.i||m.i==NET.uid)return;if(m.ev){try{onEv(m)}catch(e){}return}const r=REM[m.i]||(REM[m.i]={vx:m.x,vy:m.y});Object.assign(r,m);r.seen=Date.now()};
 const onLeave=k=>{delete REM[k]};
 function tickNet(){
  if(!NET.user||typeof p=='undefined'||!p||!p.cls||window.dead)return;
  if(curW!==wd){for(const k in REM)delete REM[k];curW=wd;T_.join(wd,onPos,onLeave);lastSig=''}
- const now=Date.now(),sig=[p.x,p.y,p.f,p.fd,p.lv,JSON.stringify(p.eq||{})].join('|');
- if((sig!=lastSig&&now-lastSent>110)||now-lastSent>2500){lastSig=sig;lastSent=now;
-  T_.send({i:NET.uid,n:p.name||NET.user,x:p.x,y:p.y,f:p.f,fd:p.fd,lv:p.lv,cls:p.cls,g:p.g,hc:p.hc,hs:p.hs,sk:p.sk,cc:p.cc,fs:p.fs,bs:p.bs,eq:p.eq||{},arm:p.arm,wpn:p.wpn,mag:p.mag,mel:p.mel})}
+ const now=Date.now(),sig=[p.x,p.y,p.f,p.fd,p.lv,p.guild||'',JSON.stringify(p.eq||{})].join('|');
+ if((sig!=lastSig&&now-lastSent>80)||now-lastSent>2500){lastSig=sig;lastSent=now;
+  T_.send({i:NET.uid,n:p.name||NET.user,x:p.x,y:p.y,f:p.f,fd:p.fd,lv:p.lv,gl:p.guild||'',cls:p.cls,g:p.g,hc:p.hc,hs:p.hs,sk:p.sk,cc:p.cc,fs:p.fs,bs:p.bs,eq:p.eq||{},arm:p.arm,wpn:p.wpn,mag:p.mag,mel:p.mel})}
  for(const k in REM)if(now-REM[k].seen>8000)delete REM[k];
  const o=$$('onl');if(o)o.textContent='👥 '+(Object.keys(REM).length+1)}
-setInterval(tickNet,100);
+setInterval(tickNet,50);setInterval(()=>{try{trackGI()}catch(e){}},50);
 const _dgi=drawGI;drawGI=function(ox,oy,n){CAM.ox=ox;CAM.oy=oy;return _dgi(ox,oy,n)};
 const _ps=pspr;
 pspr=function(X,Y,n){_ps(X,Y,n);try{drawRemotes(n)}catch(e){}};
 function drawRemotes(n){
  if(CAM.ox===undefined||!p||!p.cls)return;const real=p,now=Date.now(),c=ctx;
  for(const id in REM){const r=REM[id];
-  const dx=r.x-r.vx,dy=r.y-r.vy;if(Math.abs(dx)>8||Math.abs(dy)>8){r.vx=r.x;r.vy=r.y}else{r.vx+=dx*.22;r.vy+=dy*.22;if(Math.abs(r.x-r.vx)<.02)r.vx=r.x;if(Math.abs(r.y-r.vy)<.02)r.vy=r.y}
+  const dt=Math.min(100,now-(r._t||now));r._t=now;const dx=r.x-r.vx,dy=r.y-r.vy;if(Math.abs(dx)>8||Math.abs(dy)>8){r.vx=r.x;r.vy=r.y}else{const k=1-Math.exp(-dt/60);r.vx+=dx*k;r.vy+=dy*k;if(Math.abs(r.x-r.vx)<.02)r.vx=r.x;if(Math.abs(r.y-r.vy)<.02)r.vy=r.y}
   const X=Math.round((r.vx-CAM.ox)*T),Y=Math.round((r.vy-CAM.oy)*T);
   if(X<-40||Y<-50||X>cv.width+10||Y>cv.height+10)continue;
   const sh=Object.assign(r._sh&&Object.getPrototypeOf(r._sh)===real?r._sh:(r._sh=Object.assign(Object.create(real),{_gn:-1,_gr:null,_gx:undefined,_gy:undefined,_gt:0,_tr:0,_dr:null,lx:0,ly:0,_ft:0})),{x:r.x,y:r.y,vx:r.vx,vy:r.vy,cls:r.cls,g:r.g,hc:r.hc,hs:r.hs,sk:r.sk,cc:r.cc,fs:r.fs,bs:r.bs,eq:r.eq||{},arm:r.arm,wpn:r.wpn,mag:r.mag,mel:r.mel,lv:r.lv,f:r.f||1,fd:r.fd,name:r.n}),hu=typeof hurt!='undefined'?hurt:0;
   p=sh;try{if(typeof hurt!='undefined')hurt=0;_ps(X,Y,n)}finally{p=real;if(typeof hurt!='undefined')hurt=hu}
   c.save();c.font='bold 11px monospace';c.lineWidth=4;c.lineJoin='round';c.strokeStyle='#000';c.fillStyle='#fff';
   const nm=r.n||'?',nx=X+12-c.measureText(nm).width/2;c.strokeText(nm,nx,Y-9);c.fillText(nm,nx,Y-9);c.restore();
+  if(r.info&&r.info>now){const it=nm+' · Lv '+(r.lv||1)+' · Guild: '+(r.gl||'-');c.save();c.font='bold 10px monospace';c.lineWidth=3;c.lineJoin='round';c.strokeStyle='#000';c.fillStyle='#ffe94d';const ix=Math.max(2,Math.min(cv.width-c.measureText(it).width-2,X+12-c.measureText(it).width/2));c.strokeText(it,ix,Y-33);c.fillText(it,ix,Y-33);c.restore()}
   if(r.say&&r.say.t>now&&window.chatBubble)window.chatBubble(X+12,Y-21,r.say.x)}}
+/* tertabrak pemain lain: tampil info nama, level, guild */
+const _mvN=move;move=function(dx,dy){try{if(p&&p.cls&&(dx||dy)){const tx=p.x+(dx||0),ty=p.y+(dy||0);for(const id in REM){const r=REM[id];if(Math.round(r.x)==tx&&Math.round(r.y)==ty&&!(Math.round(r.x)==p.x&&Math.round(r.y)==p.y)){r.info=Date.now()+3500;if(dx){p.f=dx>0?1:-1;p.fd='h'}else p.fd=dy<0?'u':'d';return}}}}catch(e){}return _mvN(dx,dy)};
+/* tombol Guild */
+{const ac=$$('ac');if(ac&&!$$('gl')){const gb=document.createElement('button');gb.id='gl';gb.style.order=4;gb.textContent='🏰 Guild';gb.onclick=()=>{if(!p)return;const v=prompt('Nama guild (maks 12 huruf/angka). Kosongkan untuk keluar guild:',p.guild||'');if(v===null)return;p.guild=v.replace(/[^A-Za-z0-9 _-]/g,'').trim().slice(0,12);try{save()}catch(e){}};ac.appendChild(gb)}}
+/* ===== MONSTER & ITEM LANTAI BERSAMA =====
+   Tuan rumah = pemain dengan uid terkecil di dunia yang sama. Tuan rumah menjalankan monster dan mengirim
+   daftarnya; pemain lain menampilkan salinan dan mengirim damage. Item lantai disinkronkan lewat peristiwa. */
+const SYN={host:true,rep:false,got:false,mid:0,lastM:0,lastSig:'',gi:new Map(),gw:null,arr:null,dead:new Map()};
+function isHost(){const now=Date.now();let h=NET.uid;for(const k in REM)if(now-REM[k].seen<6000&&k<h)h=k;return h===NET.uid}
+function toRep(m){if(m._r)return;m._x=m.x;m._y=m.y;m._r=1;
+ Object.defineProperty(m,'x',{get(){return this._x},set(v){},configurable:true,enumerable:true});
+ Object.defineProperty(m,'y',{get(){return this._y},set(v){},configurable:true,enumerable:true})}
+function unRep(m){if(!m||!m._r)return;const x=m._x,y=m._y;delete m.x;delete m.y;m.x=x;m.y=y;m._r=0}
+function giCount(){const c=new Map();(p.gi||[]).forEach(g=>{if(g.w!=wd)return;const k=g.x+','+g.y+','+g.id;c.set(k,(c.get(k)||0)+1)});return c}
+function trackGI(){
+ if(!p||!p.gi)return;
+ if(SYN.gw!==wd){SYN.gw=wd;SYN.gi=giCount();return}
+ const cur=giCount(),any=Object.keys(REM).length>0;
+ if(any){
+  for(const [k,c] of cur){const o=SYN.gi.get(k)||0,a=k.split(',');for(let j=o;j<c;j++)T_.send({ev:'gd',i:NET.uid,w:wd,x:+a[0],y:+a[1],id:a.slice(2).join(',')})}
+  for(const [k,o] of SYN.gi){const c=cur.get(k)||0,a=k.split(',');for(let j=c;j<o;j++)T_.send({ev:'gk',i:NET.uid,w:wd,x:+a[0],y:+a[1],id:a.slice(2).join(',')})}
+ }
+ SYN.gi=cur}
+function syncMon(){
+ if(!NET.user||!p||!p.cls||curW!==wd)return;
+ if(SYN.arr&&SYN.arr!==mons)SYN.arr.forEach(unRep);SYN.arr=mons;
+ const host=isHost();
+ if(host&&SYN.rep){SYN.rep=false;mons.forEach(unRep)}
+ if(!host&&!SYN.rep){SYN.rep=true;SYN.got=false}
+ SYN.host=host;
+ if(!host||!Object.keys(REM).length)return;
+ const L=[];let sg='';
+ mons.forEach(m=>{if(!m._id)m._id=(++SYN.mid).toString(36)+NET.uid.slice(0,4);
+  L.push([m._id,m.k,m.lv,m.x,m.y,Math.round(m.hp),m.mh,m.a,m.f,m.fd||'',m.cv||'',m.bs?1:0,m.bi===undefined?-1:m.bi]);sg+=m.x+','+m.y+','+(m.hp|0)+';'});
+ const now=Date.now();
+ if(sg!==SYN.lastSig||now-SYN.lastM>3000){SYN.lastSig=sg;SYN.lastM=now;T_.send({ev:'ms',i:NET.uid,w:wd,L})}}
+setInterval(syncMon,250);
+function onEv(m){
+ const now=Date.now();
+ if(m.ev==='ms'){
+  if(m.w!==wd||SYN.host||!SYN.rep||!Array.isArray(m.L))return;
+  if(!SYN.got){mons.length=0;SYN.got=true}
+  for(const [k,t] of SYN.dead)if(now-t>4000)SYN.dead.delete(k);
+  const ids=new Set();
+  m.L.forEach(a=>{const id=a[0];if(SYN.dead.has(id))return;ids.add(id);
+   let q=mons.find(o=>o._id===id);
+   if(!q){const T0=MT[a[1]];if(!T0)return;q={t:T0,k:a[1],w:wd,lv:a[2],x:a[3],y:a[4],hx:a[3],hy:a[4],f:a[8]||1,hp:a[5],mh:a[6],a:a[7],b:now,_id:id};if(a[10])q.cv=a[10];if(a[11])q.bs=1;if(a[12]>=0)q.bi=a[12];mons.push(q);toRep(q)}
+   q._x=a[3];q._y=a[4];q.hx=a[3];q.hy=a[4];q.lv=a[2];q.mh=a[6];q.a=a[7];if(a[8])q.f=a[8];if(a[9])q.fd=a[9];
+   q.hp=(q._ht&&now-q._ht<600)?Math.min(q.hp,a[5]):a[5]});
+  for(let i=mons.length-1;i>=0;i--)if(!ids.has(mons[i]._id))mons.splice(i,1);
+ }else if(m.ev==='hit'){
+  if(!SYN.host)return;
+  const i=mons.findIndex(o=>o._id===m.id);if(i<0)return;const q=mons[i];
+  if(m.k||q.hp-m.d<=0){q.hp=0;mons.splice(i,1);burst(q.x,q.y,'#ffd24d',8,1.5);setTimeout(()=>respawnMon(q),840000+Math.random()*120000)}
+  else{q.hp-=m.d;q.h=now+150;fx.push({x:q.x,y:q.y,t:now+560,d:m.d,mo:q,sd:0});hitFx(q.x,q.y,now)}
+ }else if(m.ev==='gd'){
+  if(m.w!==wd||!p)return;(p.gi=p.gi||[]).push({x:m.x,y:m.y,w:wd,id:m.id});if(p.gi.length>80)p.gi.shift();SYN.gi=giCount();
+ }else if(m.ev==='gk'){
+  if(m.w!==wd||!p||!p.gi)return;const i=p.gi.findIndex(g=>g.w==wd&&g.x==m.x&&g.y==m.y&&g.id==m.id);if(i>=0)p.gi.splice(i,1);SYN.gi=giCount();
+ }}
+{const _dmgO=dmgMon;dmgMon=function(m,d,sp){try{if(SYN.rep&&!SYN.host&&m&&m._r&&m._id){const k=(m.hp-d)<=0?1:0;m._ht=Date.now();T_.send({ev:'hit',i:NET.uid,id:m._id,d:Math.round(d),k});if(k)SYN.dead.set(m._id,Date.now())}}catch(e){}return _dmgO(m,d,sp)}}
+{const _rmO=respawnMon;respawnMon=function(m){if(SYN.rep&&!SYN.host)return;return _rmO(m)}}
+
 /* lencana jumlah pemain */
 const gv=$$('gv')||document.body,onl=document.createElement('div');onl.id='onl';
 onl.style.cssText='position:absolute;left:3px;top:19px;z-index:7;pointer-events:none;font:700 8px/1 monospace;color:#bfe9ff;background:rgba(0,0,0,.28);opacity:.7;padding:2px 4px;border-radius:4px';
