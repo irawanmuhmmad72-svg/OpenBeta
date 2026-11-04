@@ -4607,13 +4607,21 @@ function onEv(m){
   if(!SYN.host)return;
   const i=mons.findIndex(o=>o._id===m.id);if(i<0)return;const q=mons[i];
   if(m.k||q.hp-m.d<=0){q.hp=0;mons.splice(i,1);burst(q.x,q.y,'#ffd24d',8,1.5);setTimeout(()=>respawnMon(q),840000+Math.random()*120000)}
-  else{q.hp-=m.d;q.h=now+150;fx.push({x:q.x,y:q.y,t:now+560,d:m.d,mo:q,sd:0});hitFx(q.x,q.y,now)}
+  else{q.hp-=m.d;q.h=now+150}
+ }else if(m.ev==='dm'){
+  if(m.w!==wd)return;const q=m.id?mons.find(o=>o._id===m.id):null;
+  fx.push({x:q?q.x:m.x,y:q?q.y:m.y,t:now+(q?560:500),d:m.d,mo:q||undefined,sd:0});hitFx(m.x,m.y,now);
+ }else if(m.ev==='xp'){
+  if(m.w!==wd)return;
+  fx.push({x:m.x,y:m.y,s:now,dur:1200,t:now+1200,k:'xp',o:0,d:(m.n?m.n+' ':'')+'+'+m.xp+' XP'});
+  fx.push({x:m.x,y:m.y,s:now,dur:1200,t:now+1200,k:'xp',g:1,o:12,d:'+'+m.gd+' G'});
  }else if(m.ev==='gd'){
   if(m.w!==wd||!p)return;(p.gi=p.gi||[]).push({x:m.x,y:m.y,w:wd,id:m.id});if(p.gi.length>80)p.gi.shift();SYN.gi=giCount();
  }else if(m.ev==='gk'){
   if(m.w!==wd||!p||!p.gi)return;const i=p.gi.findIndex(g=>g.w==wd&&g.x==m.x&&g.y==m.y&&g.id==m.id);if(i>=0)p.gi.splice(i,1);SYN.gi=giCount();
  }}
-{const _dmgO=dmgMon;dmgMon=function(m,d,sp){try{if(SYN.rep&&!SYN.host&&m&&m._r&&m._id){const k=(m.hp-d)<=0?1:0;m._ht=Date.now();T_.send({ev:'hit',i:NET.uid,id:m._id,d:Math.round(d),k});if(k)SYN.dead.set(m._id,Date.now())}}catch(e){}return _dmgO(m,d,sp)}}
+{const _dmgO=dmgMon;dmgMon=function(m,d,sp){try{if(m&&Object.keys(REM).length)T_.send({ev:'dm',i:NET.uid,w:wd,id:m._id||'',x:m.x,y:m.y,d:Math.round(d)});if(SYN.rep&&!SYN.host&&m&&m._r&&m._id){const k=(m.hp-d)<=0?1:0;m._ht=Date.now();T_.send({ev:'hit',i:NET.uid,id:m._id,d:Math.round(d),k});if(k)SYN.dead.set(m._id,Date.now())}}catch(e){}return _dmgO(m,d,sp)}}
+{const _klO=kill;kill=function(m){try{if(m&&MX[m.k]&&Object.keys(REM).length){const xp=Math.round(MX[m.k].xm*(m.lv*m.lv+m.lv*5))*(m.bs?50:1),gd=MX[m.k].gm*m.lv*(m.bs?10:1);T_.send({ev:'xp',i:NET.uid,w:wd,x:m.x,y:m.y,xp,gd,n:String(p.name||'').slice(0,8)})}}catch(e){}return _klO(m)}}
 {const _rmO=respawnMon;respawnMon=function(m){if(SYN.rep&&!SYN.host)return;return _rmO(m)}}
 
 /* lencana jumlah pemain */
